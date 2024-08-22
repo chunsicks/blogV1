@@ -1,0 +1,117 @@
+package shop.mtcoding.blog.board;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+import shop.mtcoding.blog.user.User;
+
+import java.sql.Timestamp;
+import java.util.List;
+
+@RequiredArgsConstructor
+@Repository
+public class BoardRepository {
+    //2.    IoC에 있는 객체를 찾아온
+    //1.
+    private final EntityManager em;
+
+
+    @Transactional
+    public void updateById(String title, String content, int id) {
+        Query query = em.createNativeQuery("update board_tb set title = ?, content = ? where id = ?");
+        query.setParameter(1, title);
+        query.setParameter(2, content);
+        query.setParameter(3, id);
+        query.executeUpdate();
+    }
+
+    //삭제는 바로 다이렉트하게 삭제 X 먼저 게시물 있는지 확인하고 찾은거 삭제한다
+    //만약 6트렌잭션 거는 순간 다른 애들 write할 때 멈춘다 결국
+    //지금은 묶어주는 레이어 없어서 일단 트랜젝션 적는다
+    @Transactional
+    public void deleteById(int id) {
+        Query query = em.createNativeQuery("delete from board_tb where id =?");
+        query.setParameter(1, id);
+        query.executeUpdate();
+    }
+
+    /*
+        public BoardRepository() {
+            System.out.println("BoardRepository 생성자");
+        }
+     */
+    //상세보기할 때 사용
+    //resultset해서 하나씩 파싱해서 받아야 하는데 Board.class 하면 안해도 됨
+    public Board findById(int id) {
+        Query query = em.createQuery("select b from Board b join fetch b.user U  where b.id =:id", Board.class);
+        query.setParameter("id", id);
+        //여러건이 아니니까 single,  빨간줄 뜨는 이유는 다운케스팅만 해주면 됨
+        try {
+            Board board = (Board) query.getSingleResult();
+            return board;
+        } catch (Exception e) {
+            e.printStackTrace();
+            //익셉션을 내가 잡은 것 까지 배운 - 처리방법은 v2에서 배우기
+            //터트리기는 해야 함 throw
+            throw new RuntimeException("게시글 id를 찾을 수 없습니다");
+        }
+    }
+
+    public List<Board> findAll() {
+        Query query = em.createQuery("select b from Board b order by b.id desc", Board.class);
+        List<Board> boardList = query.getResultList();
+        return boardList;
+    }
+
+    //책임 -> insert 메서드 책임이 2개면 안좋다!쓰기 힘듬   3.
+    @Transactional
+    public void save(Board board) {
+        em.persist(board);
+    }
+
+    public Board findByIdV2(int id) {
+        Query query = em.createNativeQuery("select bt.id, bt.title, bt.content, bt.user_id, bt.created_at, ut.id u_id, ut.username, ut.password, ut.email, ut.created_at u_created_at from board_tb bt inner join user_tb ut on bt.user_id = ut.id where bt.id = ?");
+        query.setParameter(1, id);
+        Object[] obs = (Object[]) query.getSingleResult();
+
+        System.out.println(obs[0]);
+        System.out.println(obs[1]);
+        System.out.println(obs[2]);
+        System.out.println(obs[3]);
+        System.out.println(obs[4]);
+        System.out.println(obs[5]);
+        System.out.println(obs[6]);
+        System.out.println(obs[7]);
+        System.out.println(obs[8]);
+        System.out.println(obs[9]);
+
+//        1
+//        제목1
+//        내용1
+//        1
+//        2024-08-21 12:49:35.197432
+//        1
+//        ssar
+//        1234
+//        ssar@nate.com
+//        2024-08-21 12:49:35.194432
+        Board board = new Board();
+        User user = new User();
+        board.setId((Integer) obs[0]);
+        board.setTitle((String) obs[1]);
+        board.setContent((String) obs[2]);
+        board.setCreatedAt((Timestamp) obs[4]);
+
+        user.setId((Integer) obs[3]);
+        user.setUsername((String) obs[6]);
+        user.setPassword((String) obs[7]);
+        user.setEmail((String) obs[8]);
+        user.setCreatedAt((Timestamp) obs[9]);
+
+        board.setUser(user);
+
+        return board;
+    }
+}
