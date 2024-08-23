@@ -13,6 +13,14 @@ public class UserReopsitoryTest {
     private UserRepository userRepository;
 
     @Test
+    public void findByUsername_test() {
+        String username = "haha";
+        User user = userRepository.findByUsername(username);
+
+        System.out.println("user = " + user);
+    }
+
+    @Test
     public void save_test() {
         String username = "haha";
         String password = "1234";
@@ -23,6 +31,6 @@ public class UserReopsitoryTest {
         user.setPassword(password);
         user.setEmail(email);
 
-        userRepository.save(user.getUsername(), user.getPassword(), user.getEmail());
+        // userRepository.save(user.getUsername(), user.getPassword(), user.getEmail());
     }
 }

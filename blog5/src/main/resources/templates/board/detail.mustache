@@ -1,18 +1,16 @@
 {{>layout/header}}
-
 <div class="container p-5">
 
     <!-- 수정삭제버튼 -->
-    {{#isOwner}}
     <div class="d-flex justify-content-end">
         <a href="/board/{{model.id}}/update-form" class="btn btn-warning me-1">수정</a>
-        <form action="/board/{{model.id}}/delete" method="post">
+        <form action = "/board/{{model.id}}/delete" method="post">
             <button class="btn btn-danger">삭제</button>
         </form>
     </div>
-    {{/isOwner}}
+
     <div class="d-flex justify-content-end">
-        <b>작성자</b> : {{model.user.username}}
+        <b>작성자</b> : 익명
     </div>
 
     <!-- 게시글내용 -->
@@ -24,5 +22,4 @@
         </div>
     </div>
 </div>
-
 {{>layout/footer}}

@@ -99,7 +99,8 @@ public class BoardRepositoryTest {
         String content = "내용1";
 
         //when 여기서 태스트 한다   인수 2개 매개변수 적어야 하는게 이거를 given에 적는다
-        boardRepository.save(title, content);
+        // 보드 객체로 넘기면 된다
+        // boardRepository.save(title, content);
 
         //eye  그냥 눈으로 확인
     }

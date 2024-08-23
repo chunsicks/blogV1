@@ -22,7 +22,7 @@ public class BoardResponse {
             this.boardId = board.getId();
             this.title = board.getTitle();
             this.content = board.getContent();
-            boolean isOwner = false;
+            this.isOwner = false;
 
             if (board.getUser().getId() == sessionUser.getId()) {
                 isOwner = true;

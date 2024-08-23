@@ -6,10 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import shop.mtcoding.blog2.user.User;
 
 import java.util.List;
@@ -21,6 +18,8 @@ public class BoardController {
 
     private final BoardRepository boardRepository;
     private final HttpSession session;
+
+
 
     @PostMapping("/board/{id}/update")
     public String update(@PathVariable("id") int id, @RequestParam("title") String title,@RequestParam("content") String content) {
@@ -38,6 +37,9 @@ public class BoardController {
     @PostMapping("/board/save")
     public String save(BoardRequest.SaveDTO saveDTO) {
         User sessionUser = (User) session.getAttribute("sessionUser");
+        if(sessionUser == null) {
+            throw new RuntimeException("로그인이 필요합니다");
+        }
         boardRepository.save(saveDTO.toEntity(sessionUser));
         return "redirect:/board";
 
@@ -54,6 +56,7 @@ public class BoardController {
     public String detail(@PathVariable("id") int id, HttpServletRequest request) {
         Board board = boardRepository.findById(id);
         request.setAttribute("model", board);
+        request.setAttribute("isOwner", false);
         return"/board/detail";
     }
     @GetMapping("/board/save-form")
@@ -65,6 +68,10 @@ public class BoardController {
         Board board = boardRepository.findById(id);
         request.setAttribute("model", board);
         return"/board/update-form";
+    }
+    @GetMapping("/test/board/1")
+    public @ResponseBody String testBoard(){
+        return "<h1> 글자 진짜 크게 나와</h1>";
     }
 
 }

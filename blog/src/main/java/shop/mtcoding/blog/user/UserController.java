@@ -15,10 +15,9 @@ public class UserController {
     private UserRepository userRepository;
     @Autowired
     private HttpSession session;
-
-
      */
-    private final UserRepository userRepository;
+    //private final UserRepository userRepository;
+    private final UserService userService;
     private final HttpSession session;
 
 
@@ -30,17 +29,18 @@ public class UserController {
 
     @PostMapping("/login")
     public String login(UserRequest.LoginDTO loginDTO) {
-        User sessionUser = userRepository.findByUsernameAndPassword(loginDTO.getUsername(), loginDTO.getPassword());
+        User sessionUser = userService.로그인(loginDTO);
         //null이 아니면 세션에 넣어준다
         // 리다이랙트 해도 살아있다
         System.out.println("12312323123213" + sessionUser.getUsername());
+        // 이거는 세션 유저 담아야 해서 필요하다
         session.setAttribute("sessionUser", sessionUser);
         return "redirect:/board";
     }
 
     @PostMapping("/join")
     public String join(UserRequest.JoinDTO joinDTO) {
-        userRepository.save(joinDTO.toEntity());
+        userService.회원가입(joinDTO);
         return "redirect:/login-form";
     }
 

@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import shop.mtcoding.blog.core.error.ex.Exception401;
 import shop.mtcoding.blog.user.User;
 
 import java.util.List;
@@ -16,7 +17,6 @@ import java.util.List;
 @Controller  //2. 식별자 요청을 받을 수 있다 이런거를 어노테이션이라 한다 왜 식별자 요청이 되는가 이거는 나중에 설명해준다
 public class BoardController {
 
-    private final BoardRepository boardRepository;
 
     private final HttpSession session;
     private final BoardService boardService;
@@ -25,10 +25,10 @@ public class BoardController {
     @GetMapping("/test/board/1")
     public @ResponseBody void testBoard() {
         //여기까지는 레이지 유저 안 땡겨옴
-        List<Board> boardList = boardRepository.findAll();
+        // List<Board> boardList = boardRepository.findAll();
         System.out.println("---------------------------------");
         //보드 리스트를 리턴해버리면? getter다 때려서 json로 바꿔야 함
-        System.out.println(boardList.get(2).getUser().getPassword());
+        // System.out.println(boardList.get(2).getUser().getPassword());
         System.out.println("---------------------------------------------");
     }
 
@@ -37,16 +37,19 @@ public class BoardController {
     //content-type : x-www-form-urlencoded
     @PostMapping("/board/{id}/update")
     public String update(@PathVariable("id") int id, @RequestParam("title") String title, @RequestParam("content") String content) {
-        boardRepository.updateById(title, content, id);
+        // boardRepository.updateById(title, content, id);
         //상세보기로 가야함
         return "redirect:/board/" + id;
     }
 
-
     @PostMapping("/board/{id}/delete")
     public String delete(@PathVariable("id") int id) {
+        User sessionUser = (User) session.getAttribute("sessionUser");
+        if (sessionUser == null) {
+            throw new Exception401("로그인이 필요합니다");
+        }
         //원래는 조회를 하고 삭제해야하는데 V1이라 그냥 함
-        boardRepository.deleteById(id);
+        boardService.게시글삭제(id, sessionUser);
         return "redirect:/board";
     }
 
@@ -59,11 +62,11 @@ public class BoardController {
         User sessionUser = (User) session.getAttribute("sessionUser");
 
         //인증 체크 필요함
+        //터트려라!  401이면 href하는게 좋다
         if (sessionUser == null) {
-            throw new RuntimeException("로그인이 필요합니다");
+            throw new Exception401("로그인이 필요합니다");
         }
-
-        boardRepository.save(saveDTO.toEntity(sessionUser));  //보드 레파지토리 객체가 어디있나?  Ioc에 있다 autoWrid해서 가져옴
+        boardService.게시글쓰기(saveDTO, sessionUser);  //보드 레파지토리 객체가 어디있나?  Ioc에 있다 autoWrid해서 가져옴
         return "redirect:/board";
     }
 
@@ -74,7 +77,7 @@ public class BoardController {
     //리플랙션은 메서드 이름 필요 없다 주소만 필요하지
     @GetMapping("/board")
     public String list(HttpServletRequest request) {
-        List<Board> boardList = boardRepository.findAll();
+        List<Board> boardList = boardService.게시글목록보기();
         //key값 모델스
         //외부에서 /board요청 -> 톰캣에 감 rqeust객체로 만들어둠 -> 때림 -> Model에 rqeust객체 주입됨 -> 이 데이터를 reqeust객체에 넣어버림
         request.setAttribute("models", boardList);
@@ -101,7 +104,7 @@ public class BoardController {
         //한건이니까 model
         //여러건이면 models
         //  request.setAttribute("model", board);
-        // request.setAttribute("isOwner", false);
+        request.setAttribute("isOwner", false);
         User sessionUser = (User) session.getAttribute("sessionUser");
         BoardResponse.DetailDTO detailDTO = boardService.상세보기(id, sessionUser);
         request.setAttribute("model", detailDTO);
@@ -116,10 +119,11 @@ public class BoardController {
 
     @GetMapping("/board/{id}/update-form")
     public String updateForm(@PathVariable("id") int id, HttpServletRequest request) {
+        //이 친구도 오류 잡자!
         //못찾으면 터진다! null 안들어옴 우리가 설정해서
-        Board board = boardRepository.findById(id);
+        // Board board = boardRepository.findById(id);
         //리퀘스트에 담는다
-        request.setAttribute("model", board);
+        //  request.setAttribute("model", board);
         return "board/update-form";
     }
 }
