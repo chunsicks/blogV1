@@ -1,5 +1,6 @@
 package shop.mtcoding.blog.board;
 
+import jakarta.persistence.EntityManager;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,25 @@ public class BoardRepositoryTest {
     //Autowired해야 가져올 수 있다
     @Autowired
     private BoardRepository boardRepository;
+
+    @Autowired
+    private EntityManager em;
+
+    //조회된 애 수정 되는지 궁금한니까 하는거
+    //트랜잭션 끝나면 플러쉬를 하는데 여기서는 트랜잭션 못거니까
+    @Test
+    public void updateByIdV2_test() {
+        // given 조회 먼저함
+        int id = 1;
+        Board board = boardRepository.findById(id);
+
+        //when
+        board.setTitle("제목10");
+        board.setContent("내용10");
+
+        //트랜잭션이 종료되면 flush();
+        em.flush();
+    }
 
     @Test
     public void updateById_test() {

@@ -17,6 +17,30 @@ import java.util.List;
 public class BoardService {
     private final BoardRepository boardRepository;
 
+    @Transactional
+    public void 게시글수정(int id, BoardRequest.UpdateDTO updateDTO, User sessionUser) {
+        //1. 조회(없으면 404)
+        Board board = boardRepository.findById(id);
+        //2. 권한 체크
+        if (board.getUser().getId() != sessionUser.getId()) {
+            throw new Exception403("게시글을 수정할 권한이 없습니다.");
+        }
+        //3. 게시글 수정(여기서 update 쿼리 해도 됨
+        //flush() 자동 호출됨(더티 체킹)
+        board.setTitle(updateDTO.getTitle());
+        board.setContent(updateDTO.getContent());
+    }
+
+    //권한체크 반드시 해야 해서 조회만 한다고 끝나지 않음
+    public Board 게시글수정화면가기(int id, User sessionUser) {
+        //일단 조회를 해!   만약 터트리는 거를 null로 설정 햇으면 따로 해줘야 함
+        Board board = boardRepository.findById(id);
+        if (board.getUser().getId() != sessionUser.getId()) {
+            throw new Exception403("게시글을 수정할 권한이 없습니다.");
+        }
+        return board;
+    }
+
     public List<Board> 게시글목록보기() {
         List<Board> boardList = boardRepository.findAll();
         return boardList;

@@ -2,10 +2,14 @@ package shop.mtcoding.blog.board;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
-import shop.mtcoding.blog.core.error.ex.Exception401;
+import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import shop.mtcoding.blog.user.User;
 
 import java.util.List;
@@ -35,39 +39,38 @@ public class BoardController {
     // url : http://localhost:8080/board/1/update
     //바디 데이터가 title=제목1 변경&content=내용1변경
     //content-type : x-www-form-urlencoded
-    @PostMapping("/board/{id}/update")
-    public String update(@PathVariable("id") int id, @RequestParam("title") String title, @RequestParam("content") String content) {
+    @PostMapping("/api/board/{id}/update")
+    public String update(@PathVariable("id") int id, @Valid BoardRequest.UpdateDTO updateDTO, Errors errors) {
+        User sessionUser = (User) session.getAttribute("sessionUser");
+
+        boardService.게시글수정(id, updateDTO, sessionUser);
         // boardRepository.updateById(title, content, id);
         //상세보기로 가야함
         return "redirect:/board/" + id;
     }
 
-    @PostMapping("/board/{id}/delete")
+    @PostMapping("/api/board/{id}/delete")
     public String delete(@PathVariable("id") int id) {
         User sessionUser = (User) session.getAttribute("sessionUser");
-        if (sessionUser == null) {
-            throw new Exception401("로그인이 필요합니다");
-        }
+
         //원래는 조회를 하고 삭제해야하는데 V1이라 그냥 함
         boardService.게시글삭제(id, sessionUser);
-        return "redirect:/board";
+        return "redirect:/";
     }
 
 
     //글쓰기 할게 -> 글쓰기 완료되면 메인으로 보내는게 좋다
 
-    @PostMapping("/board/save")
-    public String save(BoardRequest.SaveDTO saveDTO) { //스프링 기본 견략 = x-www-form-urlencoded  파싱   매개변수만 같으면 됨   화면에 폼테그 name 과 반드시 같아야 한다!!
+    @PostMapping("/api/board/save")
+    public String save(@Valid BoardRequest.SaveDTO saveDTO, Errors errors) { //스프링 기본 견략 = x-www-form-urlencoded  파싱   매개변수만 같으면 됨   화면에 폼테그 name 과 반드시 같아야 한다!!
         //세션유저가 null이면 인증 안됨 null아니면 인증됨
         User sessionUser = (User) session.getAttribute("sessionUser");
 
         //인증 체크 필요함
         //터트려라!  401이면 href하는게 좋다
-        if (sessionUser == null) {
-            throw new Exception401("로그인이 필요합니다");
-        }
+
         boardService.게시글쓰기(saveDTO, sessionUser);  //보드 레파지토리 객체가 어디있나?  Ioc에 있다 autoWrid해서 가져옴
-        return "redirect:/board";
+        return "redirect:/";
     }
 
     /*
@@ -75,7 +78,7 @@ public class BoardController {
   방법 4가지   get(가지고 오고 요청할 때), post(보내고 insert, delete update 요청할 때), put, delete(지울때)
    */
     //리플랙션은 메서드 이름 필요 없다 주소만 필요하지
-    @GetMapping("/board")
+    @GetMapping("/")
     public String list(HttpServletRequest request) {
         List<Board> boardList = boardService.게시글목록보기();
         //key값 모델스
@@ -112,13 +115,16 @@ public class BoardController {
         return "board/detail";
     }
 
-    @GetMapping("/board/save-form")
+    @GetMapping("/api/board/save-form")
     public String saveForm() {
         return "board/save-form";
     }
 
-    @GetMapping("/board/{id}/update-form")
+    @GetMapping("/api/board/{id}/update-form")
     public String updateForm(@PathVariable("id") int id, HttpServletRequest request) {
+        User sessionUser = (User) session.getAttribute("sessionUser");
+        Board board = boardService.게시글수정화면가기(id, sessionUser);
+        request.setAttribute("model", board);
         //이 친구도 오류 잡자!
         //못찾으면 터진다! null 안들어옴 우리가 설정해서
         // Board board = boardRepository.findById(id);
